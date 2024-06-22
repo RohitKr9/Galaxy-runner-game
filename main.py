@@ -11,6 +11,9 @@ from kivy.graphics import Color,Line
 
 
 class MainWidget(Widget):
+    from transforms import transform, transform_2D, transform_perspective
+    from user_actions import keyboard_closed, on_keyboard_down, on_keyboard_up, on_touch_down, on_touch_up
+
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
 
@@ -40,36 +43,9 @@ class MainWidget(Widget):
 
         Clock.schedule_interval(self.update, 1.0 / 60.0)
 
-    def keyboard_closed(self):
-        self._keyboard.unbind(on_key_down=self.on_keyboard_down)
-        self._keyboard = None
-
-    def on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        self.x_flag = True
-
-        if keycode[1] == 'a':
-            self.speed_x = -(abs(self.speed_x))
-        elif keycode[1] == 's':
-            self.speed_x = abs(self.speed_x)
-        elif keycode[1] == 'left':
-            self.speed_x = -(abs(self.speed_x))
-        elif keycode[1] == 'right':
-            self.speed_x = abs(self.speed_x)
-        return True
-    
-    def on_keyboard_up(self, keyboard, keycode):
-        self.x_flag = False
-        return True
-
     def on_size(self, *args):
         self.perspective_point_x = self.width / 2
         self.perspective_point_y = self.height * 0.75
-
-    def on_perspective_point_x(self, widget, value):
-        pass
-
-    def on_perspective_point_y(self, widget, value):
-        pass
 
     def init_vetical_lines(self):
         print("inside init_vertical")
@@ -121,37 +97,6 @@ class MainWidget(Widget):
             
         #print("this is horixonntal spacing"+str(self.horizontal_spacing))
 
-
-    #now we will write transform function
-    def transform(self, x, y):
-        #return self.transform_2D(x, y)
-        return self.transform_perspective(x, y)
-    
-    def transform_2D(self, x, y):
-        return int(x), int(y)
-    
-    def transform_perspective(self, x, y): #sara calculation yha hai(DHYAN SE)
-
-        linear_y = y * self.perspective_point_y/self.height
-
-        diff_x = x - self.perspective_point_x
-        diff_y = self.perspective_point_y - linear_y
-        factor_y = diff_y/self.perspective_point_y
-        factor_y = pow(factor_y, 3)
-        tr_x = self.perspective_point_x + diff_x * factor_y # yha x to sahi transform ho gya par y transformation k leye hum expontial function use karege taki nazdik ka bda aur dur ka chota dekhe
-        tr_y = self.perspective_point_y - factor_y * self.perspective_point_y
-
-        return int(tr_x), int(tr_y)
-    
-    def on_touch_down(self, touch):
-        self.x_flag = True
-        if touch.x < self.width/2:
-            self.speed_x = -(abs(self.speed_x))
-        else :
-            self.speed_x = abs(self.speed_x)
-
-    def on_touch_up(self, touch):
-        self.x_flag = False
     
     def update(self, dt):
         self.update_vertical_lines()
