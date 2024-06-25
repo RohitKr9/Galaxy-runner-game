@@ -1,7 +1,7 @@
 
 def transform(self, x, y):
-    #return self.transform_2D(x, y)
-    return self.transform_perspective(x, y)
+    return self.transform_2D(x, y)
+    #return self.transform_perspective(x, y)
     
 def transform_2D(self, x, y):
     return int(x), int(y)
