@@ -122,21 +122,35 @@ class MainWidget(Widget):
             tr_x1, tr_y1 = self.transform(tr_x1, tr_y1)
             tr_x2, tr_y2 = self.transform(tr_x2, tr_y2)
             self.horizontal_lines[i].points = [tr_x1, tr_y1, tr_x2, tr_y2]
-            self.horizontal_spacing = self.perspective_point_y - tr_y1
+            self.horizontal_spacing = self.perspective_point_y - tr_y1         #Ye horizontal_spacing kya kar rha hai
 
     def generate_tile_coordinate(self):
         for i in range(self.NB_TILES):
             self.tile_coordinates.append((0,i))
 
-    def update_tile_coordinate(self):
+    def update_tile_coordinate(self):       #ye function infinite generate karne me help karega
         print(self.curr_loop_count)
-        self.tile_coordinates[self.curr_loop_count - 2] = (0, self.NB_TILES)
+        #self.tile_coordinates[self.curr_loop_count - 2] = (0, self.NB_TILES)     #yha kuch gadbad dikh rha hai
+        self.update_tile_coordinate_helper()
+
+    def update_tile_coordinate_helper(self):  #this you have written today
+
+        temp_count = self.curr_loop_count
+        while(temp_count != 0):    #this is the logic of rotating of array by temp_count 
+            k1 = 0
+            k2 = self.tile_coordinates[self.NB_TILES - 1]
+            for i in range(self.NB_TILES-1, 0, -1):
+                k1 = self.tile_coordinates[self.NB_TILES - 2]
+                self.tile_coordinates[self.NB_TILES - 2] = k2
+                k2 = k1
+            temp_count -= 1
 
     def update_tiles(self):
         for i in range(self.NB_TILES):
             tile = self.tiles[i]
             t_x = self.tile_coordinates[i][0]
-            t_y = self.tile_coordinates[i][1] - self.curr_loop_count
+            t_y = self.tile_coordinates[i][1] - self.curr_loop_count #yha tu minus kyon kar rha hai curr_loop_count, ye tumahra tile movement tak koi help nahi karega
+                                                                     # yhe pe fatega, Dhyan rakhna
             x1, y1 = self.get_quad_xy_from_index(t_x, t_y)
             x2, y2 = self.get_quad_xy_from_index(t_x, t_y + 1)
             x3, y3 = self.get_quad_xy_from_index(t_x + 1, t_y + 1)
@@ -153,7 +167,7 @@ class MainWidget(Widget):
         self.update_vertical_lines()
         self.update_horizontal_lines()
         self.update_tiles()
-        self.update_tile_coordinate()
+        self.update_tile_coordinate()   # ye kyon call kar rahe ho
         self.curr_offset_y += self.speed_y
 
         if self.x_flag == True:
@@ -164,8 +178,9 @@ class MainWidget(Widget):
         if self.curr_offset_y > spacing: 
             self.curr_offset_y = 0
             self.curr_loop_count += 1
+            #self.update_tile_coordinate()     ----> hume yha se isko trigger karna chayeye, jab bhi mera curr_loop_count update ho tab yr trigger ho
 
-        if self.curr_loop_count >= self.NB_TILES:
+        if self.curr_loop_count >= self.NB_TILES:    #Is condition k karan apna infinite tile generation fail ho rha hoga
             self.curr_loop_count = 0
 
 class GalaxyApp(App):
