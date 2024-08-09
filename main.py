@@ -1,4 +1,3 @@
-
 from kivy.config import Config
 Config.set('graphics', 'width', '900')
 Config.set('graphics', 'height', '400')
@@ -10,7 +9,7 @@ from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, Clock
 from kivy.graphics import Color, Line, Quad, Triangle
-import time
+from kivy.clock import Clock
 
 
 class MainWidget(Widget):
@@ -51,19 +50,30 @@ class MainWidget(Widget):
 
     def __init__(self, **kwargs):
         super(MainWidget, self).__init__(**kwargs)
-        print("inside __init__")
-        self.init_vetical_lines()
-        self.init_horizontal_lines()
-        self.init_tiles()
-        self.generate_tile_index()
-        self.init_spaceship()
+        Clock.schedule_once(self.initialize_game, 0)
 
-        if platform in ['win', 'linux', 'macosx']:
-            self._keyboard = Window.request_keyboard(self.keyboard_closed, self)
-            self._keyboard.bind(on_key_down=self.on_keyboard_down)
-            self._keyboard.bind(on_key_up=self.on_keyboard_up)
+    def initialize_game(self, dt):
+            print(f"Window size after delay: {self.width} x {self.height}")
 
-        Clock.schedule_interval(self.update, 1.0 / 60.0)
+            print("inside __init__")
+            self.init_vetical_lines()
+            self.init_horizontal_lines()
+            self.init_tiles()
+            self.generate_tile_index()
+            self.init_spaceship()
+
+            self.spaceship_width = 0.05 * self.width
+            self.spaceship_height = 0.07 * self.height
+            self.spaceship_base_y = 0.04 * self.height
+            print(f"Window size: {self.width} x {self.height}")
+            self.update_spaceship()
+
+            if platform in ['win', 'linux', 'macosx']:
+                self._keyboard = Window.request_keyboard(self.keyboard_closed, self)
+                self._keyboard.bind(on_key_down=self.on_keyboard_down)
+                self._keyboard.bind(on_key_up=self.on_keyboard_up)
+
+            Clock.schedule_interval(self.update, 1.0 / 6.0)
 
     def on_size(self, *args):
         self.perspective_point_x = self.width / 2
@@ -94,6 +104,8 @@ class MainWidget(Widget):
         x1 = mid_x - self.spaceship_width/2
         x2 = mid_x + self.spaceship_width/2
         y1 = y2 = self.spaceship_base_y
+        #print(f"mid_lrngth___{self.width/2}")
+        #print(f"{x1}, {y1}, {mid_x}, {mid_y}, {x2}, {y2}")
         self.spaceship.points = [x1, y1, mid_x, mid_y, x2, y2]
     
     def get_line_x_from_index(self,index):    #this will return coordinate_x of that line at that index of index system
@@ -215,8 +227,8 @@ class MainWidget(Widget):
     def get_tile_extremes(self):
 
         spaceship_base = self.spaceship_base_y
-        left = self.width/2
-        right = self.width/2
+        left = self.width/2 - 30
+        right = self.width/2 + 30
        
         for i in range(3):
            
@@ -232,6 +244,9 @@ class MainWidget(Widget):
         ship_right = self.spaceship.points[4]
 
         left, right = self.get_tile_extremes()
+
+        #print(f"Ship Left: {ship_left}, Ship Right: {ship_right}")
+        print(f"Screen Left: {left}, Screen Right: {right}")
 
         if ship_left < left or ship_right > right :
             return True
