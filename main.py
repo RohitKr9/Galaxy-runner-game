@@ -10,6 +10,7 @@ from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, Clock
 from kivy.graphics import Color, Line, Quad, Triangle
 from kivy.clock import Clock
+import time
 
 
 class MainWidget(Widget):
@@ -20,9 +21,9 @@ class MainWidget(Widget):
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
 
-    NB_V_LINES = 4
+    NB_V_LINES = 12
     NB_H_LINES = 10
-    NB_TILES= 5
+    NB_TILES= 14
     V_LINES_SPACING = 0.2 #isko hum percetage me rakhe hai
 
     spaceship = None
@@ -45,6 +46,11 @@ class MainWidget(Widget):
     speed_x = 0
     speed_y = 0
     x_flag = False
+
+    game_start_time = 0
+    is_out_flag = False
+
+    update_event = None
     
     #tile_index_flag = False #this flag is for updating the tile_index list when there is change in curr_loop_count
 
@@ -54,6 +60,8 @@ class MainWidget(Widget):
 
     def initialize_game(self, dt):
             print(f"Window size after delay: {self.width} x {self.height}")
+
+            self.game_start_time = time.time()
 
             print("inside __init__")
             self.init_vetical_lines()
@@ -73,7 +81,7 @@ class MainWidget(Widget):
                 self._keyboard.bind(on_key_down=self.on_keyboard_down)
                 self._keyboard.bind(on_key_up=self.on_keyboard_up)
 
-            Clock.schedule_interval(self.update, 1.0 / 6.0)
+            self.update_event = Clock.schedule_interval(self.update, 1.0 / 60.0)
 
     def on_size(self, *args):
         self.perspective_point_x = self.width / 2
@@ -224,11 +232,13 @@ class MainWidget(Widget):
                 else:
                     self.tile_index.append((base_tile_index[0], base_tile_index[1] + 1 )) 
 
-    def get_tile_extremes(self):
+    def get_tile_extremes_old(self):
 
         spaceship_base = self.spaceship_base_y
         left = self.width/2 - 30
         right = self.width/2 + 30
+
+        print(f"Two Screen Left: {left}, Screen Right: {right}")
        
         for i in range(3):
            
@@ -237,6 +247,58 @@ class MainWidget(Widget):
                 
                 left = min(self.tiles[i].points[0], left)
                 right = max(self.tiles[i].points[6], right)
+        
+        print(f"One Screen Left: {left}, Screen Right: {right}")
+        return left, right
+    
+    def get_tile_extremes(self):
+        
+        #we have tiles having coordinates
+        #we will ask each tile -> Do you have your y-axis extremes in my given boundry
+        #if yes then we will calculate the x-extremes of that tile and update x-boundries
+
+        ship_base_y = self.spaceship_base_y
+        left = float('inf')
+        right = float('-inf')
+        count = 0
+        #print("---------------------------------------")
+        #print(f"length of tiles list{len(self.tiles)}")
+        for tile in self.tiles:
+            
+            #print(f"Tile points: {tile.points}")
+            # print(f"count {count}------------------")
+            # count =count + 1
+            #print(f"{tile.points[1]} < {ship_base_y} and {tile.points[3]} > {ship_base_y}" )
+            if tile.points[1] <= ship_base_y and tile.points[3] > ship_base_y:
+                #print("yo yo 1")
+                x1 = tile.points[0]
+                y1 = tile.points[1]
+                x2 = tile.points[2]
+                y2 = tile.points[3]
+                x3 = tile.points[4]
+                y3 = tile.points[5]
+                x4 = tile.points[6]
+                y4 = tile.points[7]
+
+                #print("yo yo2")
+                #print(f"Exception encountered:")
+
+                #print(f"printing y2 -y1 {y2 - y1}")
+                #print(f"printing y3 - y4 {y3 - y4}")
+
+                X1 = (((x2-x1) * ship_base_y) / (y2-y1)) + x1
+                X2 = x4 - (((x4-x3) * ship_base_y) / (y3-y4))
+
+                left = min(left, X1)
+                right = max(right, X2)
+                #print(f"One Screen Left: {left}, Screen Right: {right}")
+
+            # else :
+            #     #print("Inside IF block of get_tile_extremes")
+            #     break
+            #     #pass
+
+        #print(f"Two Screen Left: {left}, Screen Right: {right}")
         return left, right
 
     def is_out(self):
@@ -246,10 +308,12 @@ class MainWidget(Widget):
         left, right = self.get_tile_extremes()
 
         #print(f"Ship Left: {ship_left}, Ship Right: {ship_right}")
-        print(f"Screen Left: {left}, Screen Right: {right}")
+        print(f"Left:{ship_left} < {left}, Right:{ship_right} > {right}")
 
         if ship_left < left or ship_right > right :
+            print("is_out True")
             return True
+        print("is_out False")
         return  False
 
     def update_tiles(self):
@@ -270,6 +334,12 @@ class MainWidget(Widget):
 
             tile.points = [x1, y1, x2, y2, x3, y3, x4, y4]
 
+    def stop_game(self):
+        # Stop the scheduled update
+        if self.update_event:
+            self.update_event.cancel()
+            self.update_event = None
+        print("Game Over")
 
     def update(self, dt):
 
@@ -280,9 +350,19 @@ class MainWidget(Widget):
         self.spaceship_height = 0.07 * self.height
         self.spaceship_base_y = 0.04 * self.height
 
-        if self.is_out() :
-            print ("Game Over")
-            self.speed_y_const = 0
+        curr_time = time.time()
+        if curr_time-self.game_start_time > 3:
+            self.is_out_flag = True
+        
+        # if round(time.time()) % 3 == 0:
+        #     print(round(time.time()))
+        #     self.is_out()
+
+        if self.is_out() and self.is_out_flag :
+            print(f"game start time: {self.game_start_time} \n game end time: {time.time()}")
+            print(self.is_out())
+            print(self.is_out_flag)
+            self.stop_game()
 
         self.update_vertical_lines()
         self.update_horizontal_lines()
